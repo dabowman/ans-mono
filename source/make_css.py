@@ -1,0 +1,78 @@
+"""Write the CSS entry points into css/ (run from the repo root after the fonts are built).
+
+css/ans-mono.css                   @font-face by URL (../fonts/web/), for apps that bundle assets
+css/ans-mono.embedded.css          same font embedded as a data: URI, so the page needs no font request
+css/ans-mono-scroll.css            numerals subset with the SCRL axis, by URL (opt-in)
+css/ans-mono-scroll.embedded.css   the same, embedded
+"""
+import base64, os
+
+FALLBACK = 'ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace'
+WEB = 'fonts/web'
+
+def size(name):
+    return os.path.getsize(f'{WEB}/{name}')
+
+def src(name, embed):
+    if embed:
+        data = base64.b64encode(open(f'{WEB}/{name}', 'rb').read()).decode()
+        return f'url(data:font/woff2;base64,{data}) format("woff2")'
+    return f'url("../fonts/web/{name}") format("woff2")'
+
+def core(embed):
+    return f'''/* Ans Mono: core web font, variable on opsz (optical size). {size("AnsMono-VF.woff2")} bytes woff2{", embedded" if embed else ""}.
+   Dot gaps open automatically from ~32px (font-optical-sizing: auto); font-optical-sizing: none keeps it solid.
+   Small caps: font-variant-caps: small-caps | all-small-caps. */
+@font-face {{
+  font-family: "Ans Mono";
+  src: {src("AnsMono-VF.woff2", embed)};
+  font-weight: 400;
+  font-style: normal;
+  font-display: {"block" if embed else "swap"};
+}}
+
+/* A monospace fallback and tabular figures keep number columns aligned even before the font loads. */
+.ans-mono {{
+  font-family: "Ans Mono", {FALLBACK};
+  font-variant-numeric: tabular-nums;
+}}
+
+.ans-mono-sc {{
+  font-variant-caps: all-small-caps;
+}}
+'''
+
+def scroll(embed):
+    return f'''/* Ans Mono Scroll: numerals subset with the SCRL axis (row-by-row roll). {size("AnsMono-Numerals-Scroll-VF.woff2")} bytes woff2{", embedded" if embed else ""}.
+   Opt-in: load only where numbers animate. Covers 0-9 . , : % + − – - ( ) / # × $ € £ ¥ ¢ k K M B b and space;
+   anything else falls through to "Ans Mono", so load ans-mono{".embedded" if embed else ""}.css as well.
+   The full scroll font with every glyph is fonts/web/AnsMono-Scroll-VF.woff2. */
+@font-face {{
+  font-family: "Ans Mono Scroll";
+  src: {src("AnsMono-Numerals-Scroll-VF.woff2", embed)};
+  font-weight: 400;
+  font-style: normal;
+  font-display: {"block" if embed else "swap"};
+}}
+
+.ans-mono-roll {{
+  font-family: "Ans Mono Scroll", "Ans Mono", {FALLBACK};
+  font-variant-numeric: tabular-nums;
+}}
+
+/* SCRL: -8..0 rises in from below, 8..0 drops in from above. Values snap to whole dot rows,
+   so a linear animation steps one row at a time (8 steps).
+   Per character:  animation: ans-mono-rise .8s linear both; animation-delay: calc(var(--i) * 60ms); */
+@keyframes ans-mono-rise {{ from {{ font-variation-settings: "SCRL" -8; }} to {{ font-variation-settings: "SCRL" 0; }} }}
+@keyframes ans-mono-drop {{ from {{ font-variation-settings: "SCRL" 8; }}  to {{ font-variation-settings: "SCRL" 0; }} }}
+
+@media (prefers-reduced-motion: reduce) {{
+  .ans-mono-roll {{ animation: none !important; font-variation-settings: "SCRL" 0; }}
+}}
+'''
+
+os.makedirs('css', exist_ok=True)
+for name, text in [('ans-mono.css', core(False)), ('ans-mono.embedded.css', core(True)),
+                   ('ans-mono-scroll.css', scroll(False)), ('ans-mono-scroll.embedded.css', scroll(True))]:
+    open(f'css/{name}', 'w').write(text)
+    print(f'css/{name}', os.path.getsize(f'css/{name}'), 'bytes')

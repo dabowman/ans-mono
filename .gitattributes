@@ -1,0 +1,7 @@
+*.otf binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.png binary
+css/*.embedded.css linguist-generated=true -diff
+fonts/** linguist-generated=true

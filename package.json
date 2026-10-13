@@ -1,0 +1,39 @@
+{
+  "name": "ans-mono",
+  "version": "1.4.0",
+  "description": "A 5×7 pixel monospace after the TI-84 Plus home screen, with optical-size and scroll axes.",
+  "private": true,
+  "license": "OFL-1.1",
+  "author": "David Bowman",
+  "style": "css/ans-mono.css",
+  "exports": {
+    ".": "./css/ans-mono.css",
+    "./embedded": "./css/ans-mono.embedded.css",
+    "./scroll": "./css/ans-mono-scroll.css",
+    "./scroll/embedded": "./css/ans-mono-scroll.embedded.css",
+    "./css/*": "./css/*",
+    "./fonts/*": "./fonts/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "css/",
+    "fonts/web/",
+    "OFL.txt",
+    "README.md",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": [
+    "*.css"
+  ],
+  "keywords": [
+    "font",
+    "pixel",
+    "monospace",
+    "variable-font",
+    "ti-84",
+    "lcd"
+  ],
+  "scripts": {
+    "build": "./build.sh"
+  }
+}
