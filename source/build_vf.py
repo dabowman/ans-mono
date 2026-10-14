@@ -7,7 +7,8 @@ Scroll file (--scroll): opsz + SCRL. Ship it only where something actually anima
 
 opsz  Optical size 8–144. Every dot is its own square, inset from its cell by an amount that
       depends on opsz: overlapping (solid) up to 16px, opening into a visible LCD grid at display
-      sizes. Two masters; the gap curve lives in the avar map, not in extra masters.
+      sizes. The gap curve lives in masters (8, 16, 32, 72, 144), not in an avar map: Figma applies
+      avar to its optical-size slider but not to the named styles, so Display (72) drew half the slider's gap at 72.
 SCRL  Scroll -8–8, in whole dot rows. The 8-row cell is a fixed window; the bitmap slides through
       it by switching dots on and off (an off dot is a zero-area contour on its own centre), so the
       grid never moves. -8..0 rises in from below, 8..0 drops in from above. A stepped avar map
@@ -43,12 +44,10 @@ UPM, P, H = 1024, 128, 64      # 8 dot rows per em; H = half a dot
 ADV = 6 * P
 ROWS = 8
 
-# opsz masters: inset per side in font units. -3 = dots overlap (solid); 13 = gap of 26/128 ≈ 20%.
-INSET_MIN, INSET_MAX = -3, 13
-XMIN = min(0, INSET_MIN)          # leftmost any dot ever reaches; also every glyph's lsb
-# avar: user opsz -> design. Design runs 8..144 linearly in inset, so this table IS the gap curve:
-# solid to 16px, ~8% gap at 32, ~16% at 72, ~20% at 144.
-OPSZ_MAP = [(8, 8), (16, 8), (32, 76), (72, 118.5), (144, 144)]
+# opsz masters: inset per side in font units at each optical size; linear between them.
+# -3 = dots overlap (solid) up to 16px; ~8% gap at 32, ~16% at 72, 26/128 ≈ 20% at 144.
+OPSZ_MASTERS = [(8, -3), (16, -3), (32, 5), (72, 10), (144, 13)]
+XMIN = min(0, OPSZ_MASTERS[0][1])  # leftmost any dot ever reaches; also every glyph's lsb
 SCROLL = range(-8, 9)
 
 def stepped_map():
@@ -156,14 +155,13 @@ tmp = tempfile.mkdtemp()
 ds = DesignSpaceDocument()
 a1 = AxisDescriptor()
 a1.tag, a1.name, a1.minimum, a1.default, a1.maximum = 'opsz', 'Optical size', 8, 8, 144
-a1.map = OPSZ_MAP
 ds.addAxis(a1)
 if SCROLL_AXIS:
     a2 = AxisDescriptor()
     a2.tag, a2.name, a2.minimum, a2.default, a2.maximum = 'SCRL', 'Scroll', -8, 0, 8
     a2.map = stepped_map()
     ds.addAxis(a2)
-for opsz, inset in [(8, INSET_MIN), (144, INSET_MAX)]:
+for opsz, inset in OPSZ_MASTERS:
     for s in (SCROLL if SCROLL_AXIS else [0]):
         p = os.path.join(tmp, f'm{opsz}_{s}.ttf')
         build_master(inset, s, p)

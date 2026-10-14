@@ -27,7 +27,7 @@ for opsz in [8, 12, 16, 24, 32, 48, 64, 100, 144]:
                 src = r + k
                 on = 0 <= src < 8 and rows[src][c] == '#'
                 checked += 1
-                if on and (w < 90 or w != h): bad += 1; print('weak', ch, opsz, s, w, h)
-                if not on and (w or h): bad += 1; print('speck', ch, opsz, s, w, h) if bad < 20 else None
+                if on and (w < 90 or abs(w - h) > 1e-6): bad += 1; print('weak', ch, opsz, s, w, h)
+                if not on and (abs(w) > 1e-6 or abs(h) > 1e-6): bad += 1; print('speck', ch, opsz, s, w, h) if bad < 20 else None
 print('checked', checked, 'dots; problems', bad)
 sys.exit(1 if bad else 0)

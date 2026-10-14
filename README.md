@@ -8,15 +8,15 @@ A 5×7 pixel monospace after the TI-84 Plus home screen. 192 characters plus 26 
 
 ```
 css/
-  ans-mono.css                     @font-face by URL + helper classes           0.7 KB
-  ans-mono.embedded.css            same, font embedded as a data: URI           6.6 KB
-  ans-mono-scroll.css              numerals with the scroll axis, by URL        1.4 KB  (opt-in)
-  ans-mono-scroll.embedded.css     same, embedded                              20.6 KB  (opt-in)
+  ans-mono.css                     @font-face by URL + helper classes           2.0 KB
+  ans-mono.embedded.css            same, font embedded as a data: URI          10.3 KB
+  ans-mono-scroll.css              numerals with the scroll axis, by URL        1.5 KB  (opt-in)
+  ans-mono-scroll.embedded.css     same, embedded                              33.1 KB  (opt-in)
 fonts/
-  web/       AnsMono-VF.woff2                    core: opsz axis               4.4 KB
-             AnsMono-Regular.woff2               static, solid                  3.6 KB
-             AnsMono-Numerals-Scroll-VF.woff2    numerals: opsz + SCRL         14.5 KB
-             AnsMono-Scroll-VF.woff2             everything: opsz + SCRL       48.5 KB
+  web/       AnsMono-VF.woff2                    core: opsz axis               6.2 KB
+             AnsMono-Regular.woff2               static, solid                  4.7 KB
+             AnsMono-Numerals-Scroll-VF.woff2    numerals: opsz + SCRL         23.7 KB
+             AnsMono-Scroll-VF.woff2             everything: opsz + SCRL       96.6 KB
   variable/  AnsMono-VF.ttf, AnsMono-Scroll-VF.ttf          desktop variable fonts
   otf/       AnsMono-Text / SmallDisplay / Display / Poster .otf   desktop static (CFF)
 source/      glyph bitmaps and build scripts

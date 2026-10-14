@@ -2,6 +2,14 @@
 
 All notable changes to Ans Mono. Versions follow [Semantic Versioning](https://semver.org); the font files carry the same version in their name table (`Version 1.400` = 1.4.0, `Version 1.501` = 1.5.1).
 
+## [1.5.2] - 2026-10-14
+
+### Fixed
+- The named optical sizes (Small Display, Display) now match the optical-size slider in Figma. The gap curve lived in the `avar` map, which Figma applies to the slider but not to named styles, so Display (72) drew about half the gap the slider drew at 71 or 73, and Small Display (32) drew almost none. The curve now lives in masters at 8, 16, 32, 72 and 144, and the core font has no `avar`. Outlines are unchanged at every optical size in apps that applied `avar` already.
+
+### Changed
+- The variable fonts are larger for the extra masters: core web font 5.6 → 6.2 KB, numerals scroll subset 14.5 → 23.7 KB, full scroll font 57 → 97 KB.
+
 ## [1.5.1] - 2026-10-14
 
 ### Fixed
