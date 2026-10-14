@@ -1,6 +1,6 @@
 # Ans Mono
 
-A 5×7 pixel monospace after the TI-84 Plus home screen. 127 characters plus 26 small caps, a variable **optical size** axis that opens the LCD dot grid as type gets bigger, and an optional **scroll** axis that rolls characters in row by row.
+A 5×7 pixel monospace after the TI-84 Plus home screen. 192 characters plus 26 small caps, an **unlit-cell** layer for LCD-style readouts, a variable **optical size** axis that opens the LCD dot grid as type gets bigger, and an optional **scroll** axis that rolls characters in row by row.
 
 ![Ans Mono specimen](docs/specimen.png)
 
@@ -65,6 +65,53 @@ Keep it solid at any size with `font-optical-sizing: none`, or force a look with
 
 Small caps are drawn 5 dots tall on the lowercase body (OpenType `smcp` and `c2sc`). The helper class `.ans-mono-sc` applies `all-small-caps`.
 
+### LCD readouts: lit over unlit
+
+Real LCDs show their unlit pixels. Stylistic set 1 (`ss01`, "Unlit cells") turns every character into a block of dots exactly as wide as itself, spaces included. Set the same text twice, with the back copy in a lighter colour, and the unlit grid lines up dot for dot with the lit one. Thin spaces get thin strips of unlit dots. Nothing needs trimming or spacing by hand.
+
+One element does both layers (`.ans-mono-readout` draws the unlit copy from `data-text`):
+
+```html
+<span class="ans-mono ans-mono-readout" data-text="12 480">12 480</span>
+```
+
+```css
+.ans-mono-readout { --ans-mono-unlit: #B1BB9F; }   /* default: currentColor at 12% */
+```
+
+Or build the two layers yourself, with `font-feature-settings: "ss01"` (or `.ans-mono-unlit`) on the back copy. For a rolling readout, add `ans-mono-roll` next to `ans-mono-readout`: the digits roll while the unlit grid stays still.
+
+### Spaces
+
+Spaces come in whole-dot widths, so readouts can be spaced precisely. They're wider or narrower than a cell, so they break the monospace grid on purpose. Use them in readouts and UI text, not in code.
+
+| Character | Dots | | Character | Dots |
+|---|---|---|---|---|
+| U+200A hair space | 1 | | U+2002 en space | 4 |
+| U+2006 six-per-em space | 1 | | U+0020 space, U+00A0 no-break | 6 |
+| U+2009 thin space | 2 | | U+2007 figure space (= a digit) | 6 |
+| U+202F narrow no-break space | 2 | | U+2008 punctuation space | 6 |
+| U+2005 four-per-em space | 2 | | U+2003 em space | 8 |
+| U+2004 three-per-em space | 3 | | U+205F medium math space | 2 |
+
+### Cell graphics
+
+Drawn on the full 6×8 cell, so they tile into continuous bars and fields:
+
+| | Characters |
+|---|---|
+| Full cell | █ |
+| Lower fills (1–7 rows) | ▁ ▂ ▃ ▄ ▅ ▆ ▇ |
+| Upper fills (1–7 rows) | ▔ U+1FB82 U+1FB83 ▀ U+1FB84 U+1FB85 U+1FB86 |
+| Single dot row, top to bottom | ▔ U+1FB76 U+1FB77 U+1FB78 U+1FB79 U+1FB7A U+1FB7B ▁ |
+| Single dot column, left to right | ▏ U+1FB70 U+1FB72 U+1FB73 U+1FB74 ▕ |
+| Left fills | ▏(1) ▎(2) ▍(2) ▌(3) ▋(4) ▊(5) ▉(5) |
+| Right fills | ▕(1) U+1FB87(2) U+1FB88(2) ▐(3) U+1FB89(4) U+1FB8A(5) U+1FB8B(5) |
+| Quadrants (3×4 dots) | ▖ ▗ ▘ ▝ ▙ ▚ ▛ ▜ ▞ ▟ |
+| Shades | ░ (1 dot in 4) ▒ (checkerboard) ▓ (3 in 4) |
+
+The cell is 8 dots tall, so vertical eighths are exact, which makes the lower fills right for bar charts and sparklines. It is 6 dots wide, so Unicode's horizontal eighths share columns: U+1FB71 draws the same as U+1FB70, and U+1FB75 the same as U+1FB74. Use the column characters listed above for distinct columns.
+
 ### Scroll (`SCRL`, −8 to 8): opt-in
 
 Characters slide through a fixed 8-row window by switching dots on and off. The grid never moves.
@@ -104,7 +151,7 @@ Install **either** the static OTFs **or** the variable TTF, not both. They share
 - **`fonts/otf/`** works in every app. Four styles, one per optical size: Text (solid), Small Display, Display, Poster. Apps that support typographic families group them under *Ans Mono*; others list *Ans Mono Text*, *Ans Mono Display* and so on.
 - **`fonts/variable/AnsMono-VF.ttf`** is for apps with variable-font support (Figma, Adobe, Affinity, Sketch). It has an Optical size slider and the same four named styles. `AnsMono-Scroll-VF.ttf` adds the Scroll axis for motion work.
 
-Small caps: turn on *Small Capitals* / *All Small Caps* in the app's OpenType panel.
+Small caps: turn on *Small Capitals* / *All Small Caps* in the app's OpenType panel. Unlit cells: *Stylistic Set 1*.
 
 ## Building
 
@@ -120,7 +167,8 @@ The build is reproducible: unchanged sources rebuild byte-for-byte, so diffs in 
 
 | Script | Does |
 |---|---|
-| `source/glyphs.py` | glyph bitmaps (`G`) and small caps (`SC`) |
+| `source/glyphs.py` | glyph bitmaps (`G`), small caps (`SC`), space widths (`W`) |
+| `source/features.py` | advance widths, unlit-cell glyphs and the OpenType features (smcp, c2sc, ss01) |
 | `source/build.py` | static font with merged outlines |
 | `source/build_vf.py` | variable font; `--scroll` adds the SCRL axis |
 | `source/verify.py` | checks every dot of every glyph across 9 sizes × 13 scroll values (no specks, no partial dots); fails the build otherwise |

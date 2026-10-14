@@ -175,3 +175,83 @@ sc('W', '#...#','#...#','#.#.#','#.#.#','.#.#.')
 sc('X', '#...#','.#.#.','..#..','.#.#.','#...#')
 sc('Y', '#...#','.#.#.','..#..','..#..','..#..')
 sc('Z', '#####','...#.','..#..','.#...','#####')
+
+# ---------------------------------------------------------------------------------------------
+# Cell graphics: drawn on the full 6×8 cell (spacing column and descender row included), so a run
+# of them tiles into one continuous dot field. Row 0 = top, row 7 = bottom of the cell.
+# ---------------------------------------------------------------------------------------------
+W = {}          # advance width in dots for glyphs that are not one 6-dot cell (the spaces)
+CELL_W, CELL_H = 6, 8
+
+def cell(ch, pred):
+    """Define a full-cell glyph from pred(col, row) -> lit?"""
+    G[ch] = tuple(''.join('#' if pred(c, r) else '.' for c in range(CELL_W)) for r in range(CELL_H))
+
+def space(ch, dots):
+    W[ch] = dots
+    G[ch] = tuple('.' * dots for _ in range(CELL_H))
+
+# Full block: every dot of the cell. Behind text it is the unlit grid.
+cell('█', lambda c, r: True)
+
+# Lower fills ▁▂▃▄▅▆▇: bottom 1–7 rows (8 rows per cell, so eighths are exact)
+for k, ch in enumerate('▁▂▃▄▅▆▇', start=1):
+    cell(ch, lambda c, r, k=k: r >= CELL_H - k)
+
+# Upper fills: ▔ 1 row, ▀ half; Symbols for Legacy Computing for the other eighths
+for ch, k in [('▔', 1), ('\U0001FB82', 2), ('\U0001FB83', 3), ('▀', 4),
+              ('\U0001FB84', 5), ('\U0001FB85', 6), ('\U0001FB86', 7)]:
+    cell(ch, lambda c, r, k=k: r < k)
+
+# Single dot rows: ▔ (row 0) … U+1FB76–1FB7B (rows 1–6) … ▁ (row 7)
+for i, cp in enumerate(range(0x1FB76, 0x1FB7C), start=1):
+    cell(chr(cp), lambda c, r, i=i: r == i)
+
+# Single dot columns. Unicode slices the cell into eighths; 6 dot columns can't take 8 positions,
+# so each eighth goes to the column under its centre: ▏→0, U+1FB70→1, U+1FB71→1, U+1FB72→2,
+# U+1FB73→3, U+1FB74→4, U+1FB75→4, ▕→5.
+for pos, ch in enumerate(['▏', '\U0001FB70', '\U0001FB71', '\U0001FB72', '\U0001FB73',
+                          '\U0001FB74', '\U0001FB75', '▕'], start=1):
+    col = int(((pos - 0.5) / 8) * CELL_W)
+    cell(ch, lambda c, r, col=col: c == col)
+
+# Left fills ▏▎▍▌▋▊▉: eighths of the width, rounded to whole columns (1 2 2 3 4 5 5)
+for k, ch in enumerate('▏▎▍▌▋▊▉', start=1):
+    n = int(k * CELL_W / 8 + 0.5)
+    if ch != '▏':                       # ▏ is already the 1-column slice above
+        cell(ch, lambda c, r, n=n: c < n)
+
+# Right fills: ▐ half, ▕ one column (above); Legacy Computing for the rest (2 2 4 5 5)
+cell('▐', lambda c, r: c >= CELL_W // 2)
+for ch, k in [('\U0001FB87', 2), ('\U0001FB88', 3), ('\U0001FB89', 5), ('\U0001FB8A', 6), ('\U0001FB8B', 7)]:
+    n = int(k * CELL_W / 8 + 0.5)
+    cell(ch, lambda c, r, n=n: c >= CELL_W - n)
+
+# Quadrants: 3×4 dots each
+UL = lambda c, r: c < 3 and r < 4
+UR = lambda c, r: c >= 3 and r < 4
+LL = lambda c, r: c < 3 and r >= 4
+LR = lambda c, r: c >= 3 and r >= 4
+for ch, parts in [('▖', [LL]), ('▗', [LR]), ('▘', [UL]), ('▝', [UR]),
+                  ('▙', [UL, LL, LR]), ('▚', [UL, LR]), ('▛', [UL, UR, LL]),
+                  ('▜', [UL, UR, LR]), ('▞', [UR, LL]), ('▟', [UR, LL, LR])]:
+    cell(ch, lambda c, r, parts=parts: any(p(c, r) for p in parts))
+
+# Shades as dot patterns: ░ 1 in 4, ▒ checkerboard, ▓ 3 in 4
+cell('░', lambda c, r: c % 2 == 0 and r % 2 == 0)
+cell('▒', lambda c, r: (c + r) % 2 == 0)
+cell('▓', lambda c, r: not (c % 2 == 0 and r % 2 == 0))
+
+# Spaces at whole-dot widths (the cell is 6 dots wide, the em is 8)
+space(' ', 6)   # no-break space
+space(' ', 6)   # figure space (= one digit)
+space(' ', 6)   # punctuation space
+space(' ', 4)   # en space
+space(' ', 8)   # em space
+space(' ', 3)   # three-per-em space
+space(' ', 2)   # four-per-em space
+space(' ', 1)   # six-per-em space
+space(' ', 2)   # thin space
+space(' ', 1)   # hair space
+space(' ', 2)   # narrow no-break space (thousands separator)
+space(' ', 2)   # medium mathematical space

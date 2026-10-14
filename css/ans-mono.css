@@ -1,6 +1,7 @@
-/* Ans Mono: core web font, variable on opsz (optical size). 4372 bytes woff2.
+/* Ans Mono: core web font, variable on opsz (optical size). 5624 bytes woff2.
    Dot gaps open automatically from ~32px (font-optical-sizing: auto); font-optical-sizing: none keeps it solid.
-   Small caps: font-variant-caps: small-caps | all-small-caps. */
+   Small caps: font-variant-caps: small-caps | all-small-caps.
+   Unlit cells: font-feature-settings: "ss01" (or .ans-mono-unlit / .ans-mono-readout below). */
 @font-face {
   font-family: "Ans Mono";
   src: url("../fonts/web/AnsMono-VF.woff2") format("woff2");
@@ -17,4 +18,32 @@
 
 .ans-mono-sc {
   font-variant-caps: all-small-caps;
+}
+
+/* Unlit cells (OpenType ss01): every character, spaces included, becomes a block of dots
+   exactly as wide as itself. Put a copy of the text behind the real text in a lighter colour. */
+.ans-mono-unlit {
+  font-feature-settings: "ss01";
+}
+
+/* LCD readout in one element. The unlit layer is drawn from data-text, so keep it equal to the text:
+     <span class="ans-mono ans-mono-readout" data-text="12 480">12 480</span>
+   Set the unlit colour with --ans-mono-unlit. */
+.ans-mono-readout {
+  position: relative;
+  isolation: isolate;
+  white-space: pre;
+}
+.ans-mono-readout::before {
+  content: attr(data-text);
+  content: attr(data-text) / "";          /* hide the copy from screen readers where supported */
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  font-family: "Ans Mono", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;    /* the core font carries ss01, even under .ans-mono-roll */
+  font-feature-settings: "ss01";
+  font-variation-settings: normal;        /* the unlit grid never scrolls */
+  color: var(--ans-mono-unlit, color-mix(in srgb, currentColor 12%, transparent));
+  pointer-events: none;
+  user-select: none;
 }

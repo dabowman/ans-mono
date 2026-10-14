@@ -4,6 +4,8 @@ import importlib
 _mod = importlib.import_module(sys.argv[2] if len(sys.argv) > 2 else 'glyphs')
 G = _mod.G
 SC = getattr(_mod, 'SC', {})   # small caps, keyed by capital letter
+W = getattr(_mod, 'W', {})     # advance widths in dots for non-cell glyphs (spaces)
+from features import gname, width, extra_glyphs, fea, CELL
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.ttGlyphPen import TTGlyphPen
 from version import NAME_VERSION, FONT_REVISION, NAME_META
@@ -67,20 +69,22 @@ def draw(rows):
         pen.closePath()
     return pen.glyph()
 
-def gname(ch):
-    if ch == ' ':
-        return 'space'
-    return 'uni%04X' % ord(ch)
-
 order = ['.notdef'] + [gname(c) for c in G]
 glyphs = {'.notdef': draw(('#####', '#...#', '#...#', '#...#', '#...#', '#...#', '#####', '.....'))}
 cmap = {}
 for ch, rows in G.items():
     glyphs[gname(ch)] = draw(rows)
     cmap[ord(ch)] = gname(ch)
+adv = {'.notdef': CELL}
+adv.update({gname(ch): width(ch, W) for ch in G})
 for ch, rows in SC.items():
     order.append(gname(ch) + '.sc')
     glyphs[gname(ch) + '.sc'] = draw(rows)
+    adv[gname(ch) + '.sc'] = CELL
+for name, (rows, w) in extra_glyphs(G, W).items():     # ss01 unlit cells
+    order.append(name)
+    glyphs[name] = draw(rows)
+    adv[name] = w
 
 fb = FontBuilder(UPM, isTTF=True)
 fb.setupGlyphOrder(order)
@@ -89,7 +93,7 @@ fb.setupGlyf(glyphs)
 def lsb(gl):
     if not gl.numberOfContours: return 0
     return min(x for x, y in gl.coordinates)
-fb.setupHorizontalMetrics({n: (ADV, lsb(glyphs[n])) for n in order})
+fb.setupHorizontalMetrics({n: (adv[n] * P, lsb(glyphs[n])) for n in order})
 fb.setupHorizontalHeader(ascent=7 * P, descent=-P)
 fb.setupNameTable({
     "familyName": NAME, "styleName": "Regular",
@@ -105,12 +109,7 @@ fb.setupOS2(sTypoAscender=7 * P, sTypoDescender=-P, sTypoLineGap=0,
 from fontTools.ttLib.tables.O_S_2f_2 import Panose
 pn = Panose(); pn.bFamilyType = 2; pn.bProportion = 9
 fb.font["OS/2"].panose = pn
-if SC:
-    caps = sorted(SC)
-    fb.addOpenTypeFeatures(
-        "languagesystem DFLT dflt; languagesystem latn dflt;\n"
-        "feature smcp { sub [%s] by [%s]; } smcp;\n" % (' '.join(gname(c.lower()) for c in caps), ' '.join(gname(c) + '.sc' for c in caps)) +
-        "feature c2sc { sub [%s] by [%s]; } c2sc;\n" % (' '.join(gname(c) for c in caps), ' '.join(gname(c) + '.sc' for c in caps)))
+fb.addOpenTypeFeatures(fea(G, SC, W))
 fb.setupPost(isFixedPitch=1, underlinePosition=-P // 2, underlineThickness=P)
 fb.font["head"].fontRevision = FONT_REVISION
 fb.save(OUT + ".ttf")

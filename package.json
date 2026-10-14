@@ -1,6 +1,6 @@
 {
   "name": "ans-mono",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "A 5×7 pixel monospace after the TI-84 Plus home screen, with optical-size and scroll axes.",
   "private": true,
   "license": "OFL-1.1",

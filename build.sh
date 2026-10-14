@@ -22,6 +22,7 @@ python3 source/verify.py "$B/AnsMono-Scroll-VF.ttf" glyphs
 echo "→ numerals subset"
 pyftsubset "$B/AnsMono-Scroll-VF.ttf" \
   --text=" 0123456789.,:%+-−–()/\$€£¥¢#×kKMBb" \
+  --unicodes="U+00A0,U+2002-2009,U+200A,U+202F,U+205F" \
   --layout-features='' --no-hinting --name-IDs='*' --name-languages='*' --flavor=woff2 \
   --output-file="$B/AnsMono-Numerals-Scroll-VF.woff2"
 echo "→ desktop OTF"

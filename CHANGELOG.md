@@ -2,6 +2,18 @@
 
 All notable changes to Ans Mono. Versions follow [Semantic Versioning](https://semver.org); the font files carry the same version in their name table (`Version 1.400` = 1.4.0).
 
+## [1.5.0] - 2026-10-14
+
+### Added
+- **Unlit cells** (OpenType `ss01`, CSS `font-feature-settings: "ss01"`): every character, spaces included, becomes a block of unlit dots exactly as wide as itself, for LCD-style readouts with a lit layer over an unlit one.
+- CSS helpers `.ans-mono-unlit` and `.ans-mono-readout` (one-element readout drawn from `data-text`; works with `.ans-mono-roll`, where the unlit grid stays still while digits roll).
+- Spaces at whole-dot widths: hair U+200A (1), six-per-em U+2006 (1), thin U+2009 (2), narrow no-break U+202F (2), four-per-em U+2005 (2), medium math U+205F (2), three-per-em U+2004 (3), en U+2002 (4), figure U+2007 (6), punctuation U+2008 (6), no-break U+00A0 (6), em U+2003 (8).
+- Cell graphics on the full 6×8 cell: lower fills ▁–▇, upper fills (▔ ▀ and U+1FB82–1FB86), single dot rows (U+1FB76–1FB7B), single dot columns (▏ ▕ and U+1FB70–1FB75), left and right fills (▎–▉, ▐, U+1FB87–1FB8B), quadrants ▖–▟, shades ░ ▒ ▓ as dot patterns.
+- Numerals scroll subset includes the new spaces.
+
+### Changed
+- █ (U+2588) now fills the whole 6×8 cell instead of the 5×7 glyph area, so runs of blocks tile into one continuous dot field.
+
 ## [1.4.0] - 2026-10-13
 
 First release in this repository.

@@ -1,4 +1,5 @@
 import sys, importlib
+from features import gname
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 path, mod = sys.argv[1], sys.argv[2]
@@ -13,8 +14,8 @@ for opsz in [8, 12, 16, 24, 32, 48, 64, 100, 144]:
         k = round(s)
         glyf = inst['glyf']
         for ch, rows in G.items():
-            name = 'space' if ch == ' ' else 'uni%04X' % ord(ch)
-            rows = list(rows) + ['.....'] * (8 - len(rows))
+            name = gname(ch)
+            w = max(len(r) for r in rows); rows = [r.ljust(w, '.') for r in rows] + ['.' * w] * (8 - len(rows))
             g = glyf[name]; coords, ends = g.getCoordinates(glyf)[0], g.endPtsOfContours
             assert min(x for x, y in coords) == -3, (ch, 'xMin', opsz, s, min(x for x, y in coords), coords[0])
             start = 1

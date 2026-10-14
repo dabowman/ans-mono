@@ -35,11 +35,13 @@ SCROLL_AXIS = '--scroll' in sys.argv
 _mod = importlib.import_module(MOD)
 G = _mod.G
 SC = getattr(_mod, 'SC', {})   # small caps (unencoded; smcp / c2sc)
+W = getattr(_mod, 'W', {})     # advance widths in dots for non-cell glyphs (spaces)
+from features import gname, width, extra_glyphs, fea, CELL
 PS = NAME.replace(' ', '') + ('Scroll' if SCROLL_AXIS else '')
 
 UPM, P, H = 1024, 128, 64      # 8 dot rows per em; H = half a dot
 ADV = 6 * P
-ROWS, COLS = 8, 5
+ROWS = 8
 
 # opsz masters: inset per side in font units. -3 = dots overlap (solid); 13 = gap of 26/128 ≈ 20%.
 INSET_MIN, INSET_MAX = -3, 13
@@ -60,15 +62,13 @@ def stepped_map():
         else: pts += [(lo, k), (hi, k)]
     return pts
 
-def gname(ch):
-    return 'space' if ch == ' ' else 'uni%04X' % ord(ch)
-
 NOTDEF = ['#####', '#...#', '#...#', '#...#', '#...#', '#...#', '#####', '.....']
 
 def draw(rows, inset, shift):
     """shift = SCRL value: display row r shows source row r + shift."""
-    rows = list(rows) + ['.....'] * (ROWS - len(rows))
-    cols = [c for c in range(COLS) if any(row[c] == '#' for row in rows)]
+    w = max(len(r) for r in rows)
+    rows = [r.ljust(w, '.') for r in rows] + ['.' * w] * (ROWS - len(rows))
+    cols = [c for c in range(w) if any(row[c] == '#' for row in rows)]
     coords, ends = [(XMIN, 0)], [0]                    # left anchor: xMin is XMIN in every master
     for c in cols:
         for r in range(ROWS) if SCROLL_AXIS else [r for r in range(ROWS) if rows[r][c] == '#']:
@@ -94,14 +94,21 @@ def build_master(inset, shift, path):
     for ch, rows in G.items():
         glyphs[gname(ch)] = draw(rows, inset, shift)
         cmap[ord(ch)] = gname(ch)
+    adv = {'.notdef': CELL}
+    adv.update({gname(ch): width(ch, W) for ch in G})
     for ch, rows in SC.items():
         order.append(gname(ch) + '.sc')
         glyphs[gname(ch) + '.sc'] = draw(rows, inset, shift)
+        adv[gname(ch) + '.sc'] = CELL
+    for name, (rows, w) in extra_glyphs(G, W).items():     # ss01 unlit cells
+        order.append(name)
+        glyphs[name] = draw(rows, inset, shift)
+        adv[name] = w
     fb = FontBuilder(UPM, isTTF=True)
     fb.setupGlyphOrder(order)
     fb.setupCharacterMap(cmap)
     fb.setupGlyf(glyphs)
-    fb.setupHorizontalMetrics({n: (ADV, XMIN) for n in order})
+    fb.setupHorizontalMetrics({n: (adv[n] * P, XMIN) for n in order})
     fb.setupHorizontalHeader(ascent=7 * P, descent=-P)
     fam = NAME + (' Scroll' if SCROLL_AXIS else '')
     fb.setupNameTable({
@@ -115,12 +122,7 @@ def build_master(inset, shift, path):
                 xAvgCharWidth=ADV, achVendID="NONE", fsType=0)
     pn = Panose(); pn.bFamilyType = 2; pn.bProportion = 9
     fb.font["OS/2"].panose = pn
-    if SC:
-        caps = sorted(SC)
-        fb.addOpenTypeFeatures(
-            "languagesystem DFLT dflt; languagesystem latn dflt;\n"
-            "feature smcp { sub [%s] by [%s]; } smcp;\n" % (' '.join(gname(c.lower()) for c in caps), ' '.join(gname(c) + '.sc' for c in caps)) +
-            "feature c2sc { sub [%s] by [%s]; } c2sc;\n" % (' '.join(gname(c) for c in caps), ' '.join(gname(c) + '.sc' for c in caps)))
+    fb.addOpenTypeFeatures(fea(G, SC, W))
     fb.setupPost(isFixedPitch=1, underlinePosition=-H, underlineThickness=P)
     fb.save(path)
 

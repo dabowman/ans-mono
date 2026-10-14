@@ -22,7 +22,8 @@ def src(name, embed):
 def core(embed):
     return f'''/* Ans Mono: core web font, variable on opsz (optical size). {size("AnsMono-VF.woff2")} bytes woff2{", embedded" if embed else ""}.
    Dot gaps open automatically from ~32px (font-optical-sizing: auto); font-optical-sizing: none keeps it solid.
-   Small caps: font-variant-caps: small-caps | all-small-caps. */
+   Small caps: font-variant-caps: small-caps | all-small-caps.
+   Unlit cells: font-feature-settings: "ss01" (or .ans-mono-unlit / .ans-mono-readout below). */
 @font-face {{
   font-family: "Ans Mono";
   src: {src("AnsMono-VF.woff2", embed)};
@@ -40,13 +41,43 @@ def core(embed):
 .ans-mono-sc {{
   font-variant-caps: all-small-caps;
 }}
+
+/* Unlit cells (OpenType ss01): every character, spaces included, becomes a block of dots
+   exactly as wide as itself. Put a copy of the text behind the real text in a lighter colour. */
+.ans-mono-unlit {{
+  font-feature-settings: "ss01";
+}}
+
+/* LCD readout in one element. The unlit layer is drawn from data-text, so keep it equal to the text:
+     <span class="ans-mono ans-mono-readout" data-text="12 480">12 480</span>
+   Set the unlit colour with --ans-mono-unlit. */
+.ans-mono-readout {{
+  position: relative;
+  isolation: isolate;
+  white-space: pre;
+}}
+.ans-mono-readout::before {{
+  content: attr(data-text);
+  content: attr(data-text) / "";          /* hide the copy from screen readers where supported */
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  font-family: "Ans Mono", {FALLBACK};    /* the core font carries ss01, even under .ans-mono-roll */
+  font-feature-settings: "ss01";
+  font-variation-settings: normal;        /* the unlit grid never scrolls */
+  color: var(--ans-mono-unlit, color-mix(in srgb, currentColor 12%, transparent));
+  pointer-events: none;
+  user-select: none;
+}}
 '''
 
 def scroll(embed):
     return f'''/* Ans Mono Scroll: numerals subset with the SCRL axis (row-by-row roll). {size("AnsMono-Numerals-Scroll-VF.woff2")} bytes woff2{", embedded" if embed else ""}.
    Opt-in: load only where numbers animate. Covers 0-9 . , : % + − – - ( ) / # × $ € £ ¥ ¢ k K M B b and space;
    anything else falls through to "Ans Mono", so load ans-mono{".embedded" if embed else ""}.css as well.
-   The full scroll font with every glyph is fonts/web/AnsMono-Scroll-VF.woff2. */
+   The full scroll font with every glyph is fonts/web/AnsMono-Scroll-VF.woff2.
+   Rolling readout: class="ans-mono-roll ans-mono-readout" data-text="…" keeps the unlit grid still
+   while the digits roll (the unlit layer is set in the core font). */
 @font-face {{
   font-family: "Ans Mono Scroll";
   src: {src("AnsMono-Numerals-Scroll-VF.woff2", embed)};
