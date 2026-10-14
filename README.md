@@ -41,6 +41,19 @@ Pick one stylesheet:
 
 Use the embedded version for overlays, extensions and anything injected into pages you don't control. The page doesn't need to serve or fetch a font file, so the type can't fall back to a system font because of a missing or blocked asset.
 
+### Which version is loaded?
+
+File names don't change between releases, so an old copy can hide in a browser cache, a CDN, an older embedded stylesheet or an installed desktop font. The stylesheets request `?v=<version>` to avoid the first two. To check a page, paste this into the console:
+
+```js
+(() => { const c = document.createElement('canvas').getContext('2d');
+  c.font = '80px "Ans Mono"';                      // 80px → 1 dot = 10px
+  return { thinSpace: c.measureText('\u2009').width,  // 20 in 1.5+, otherwise the fallback font's width
+           block: c.measureText('█').width }; })()   // 60
+```
+
+On desktop, remove the old Ans Mono fonts before you install a new release, then restart the apps that use them.
+
 ### Optical size (`opsz`, 8–144)
 
 The browser sets it from the font size automatically (`font-optical-sizing: auto`):

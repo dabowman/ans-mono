@@ -1,10 +1,10 @@
-/* Ans Mono: core web font, variable on opsz (optical size). 5624 bytes woff2.
+/* Ans Mono: core web font, variable on opsz (optical size). 5640 bytes woff2.
    Dot gaps open automatically from ~32px (font-optical-sizing: auto); font-optical-sizing: none keeps it solid.
    Small caps: font-variant-caps: small-caps | all-small-caps.
    Unlit cells: font-feature-settings: "ss01" (or .ans-mono-unlit / .ans-mono-readout below). */
 @font-face {
   font-family: "Ans Mono";
-  src: url("../fonts/web/AnsMono-VF.woff2") format("woff2");
+  src: url("../fonts/web/AnsMono-VF.woff2?v=1.5.1") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;

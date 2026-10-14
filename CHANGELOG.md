@@ -1,6 +1,11 @@
 # Changelog
 
-All notable changes to Ans Mono. Versions follow [Semantic Versioning](https://semver.org); the font files carry the same version in their name table (`Version 1.400` = 1.4.0).
+All notable changes to Ans Mono. Versions follow [Semantic Versioning](https://semver.org); the font files carry the same version in their name table (`Version 1.400` = 1.4.0, `Version 1.501` = 1.5.1).
+
+## [1.5.1] - 2026-10-14
+
+### Fixed
+- Stylesheets now request fonts with a version query (`AnsMono-VF.woff2?v=1.5.1`). File names stay the same between releases, so browsers and CDNs could keep serving a cached older font (for example the 5×7 █ from 1.4 instead of the full 6×8 cell).
 
 ## [1.5.0] - 2026-10-14
 

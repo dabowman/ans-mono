@@ -5,7 +5,9 @@ css/ans-mono.embedded.css          same font embedded as a data: URI, so the pag
 css/ans-mono-scroll.css            numerals subset with the SCRL axis, by URL (opt-in)
 css/ans-mono-scroll.embedded.css   the same, embedded
 """
-import base64, os
+import base64, os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from version import VERSION
 
 FALLBACK = 'ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace'
 WEB = 'fonts/web'
@@ -17,7 +19,8 @@ def src(name, embed):
     if embed:
         data = base64.b64encode(open(f'{WEB}/{name}', 'rb').read()).decode()
         return f'url(data:font/woff2;base64,{data}) format("woff2")'
-    return f'url("../fonts/web/{name}") format("woff2")'
+    # ?v= busts browser/CDN caches: file names stay the same between releases
+    return f'url("../fonts/web/{name}?v={VERSION}") format("woff2")'
 
 def core(embed):
     return f'''/* Ans Mono: core web font, variable on opsz (optical size). {size("AnsMono-VF.woff2")} bytes woff2{", embedded" if embed else ""}.

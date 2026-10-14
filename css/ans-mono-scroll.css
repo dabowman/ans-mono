@@ -1,4 +1,4 @@
-/* Ans Mono Scroll: numerals subset with the SCRL axis (row-by-row roll). 14540 bytes woff2.
+/* Ans Mono Scroll: numerals subset with the SCRL axis (row-by-row roll). 14520 bytes woff2.
    Opt-in: load only where numbers animate. Covers 0-9 . , : % + − – - ( ) / # × $ € £ ¥ ¢ k K M B b and space;
    anything else falls through to "Ans Mono", so load ans-mono.css as well.
    The full scroll font with every glyph is fonts/web/AnsMono-Scroll-VF.woff2.
@@ -6,7 +6,7 @@
    while the digits roll (the unlit layer is set in the core font). */
 @font-face {
   font-family: "Ans Mono Scroll";
-  src: url("../fonts/web/AnsMono-Numerals-Scroll-VF.woff2") format("woff2");
+  src: url("../fonts/web/AnsMono-Numerals-Scroll-VF.woff2?v=1.5.1") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
