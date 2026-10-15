@@ -15,6 +15,8 @@ echo "→ static"
 python3 source/build.py "$B/AnsMono-Regular" glyphs "Ans Mono"
 echo "→ variable: opsz"
 python3 source/build_vf.py "$B/AnsMono-VF" glyphs "Ans Mono"
+echo "→ verifying core font (one _dot per lit cell, xMin = side bearing, 9 sizes)"
+python3 source/verify_core.py "$B/AnsMono-VF.ttf" glyphs
 echo "→ variable: opsz + SCRL"
 python3 source/build_vf.py "$B/AnsMono-Scroll-VF" glyphs "Ans Mono" --scroll
 echo "→ verifying scroll axis (every dot, 9 sizes × 13 scroll values)"

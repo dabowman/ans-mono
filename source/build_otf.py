@@ -6,7 +6,8 @@ One .otf per named optical size: Text (solid), Small Display, Display, Poster (d
 Each style is its own legacy family ("Ans Mono Display") so it shows up in every app, and carries
 the typographic family/subfamily names (IDs 16/17) so apps that support it group them under one
 family ("Ans Mono" → Text / Small Display / Display / Poster). OpenType features (small caps)
-are carried over.
+are carried over. The core font's composites (one `_dot` element per lit cell) are decomposed into
+plain outlines here, and the element glyphs themselves are left out.
 """
 import sys, os
 from fontTools.ttLib import TTFont, newTable
@@ -14,13 +15,15 @@ from fontTools.varLib.instancer import instantiateVariableFont
 from fontTools.ttLib.removeOverlaps import removeOverlaps
 from fontTools.fontBuilder import FontBuilder
 from fontTools.pens.t2CharStringPen import T2CharStringPen
-from fontTools.pens.recordingPen import RecordingPen
+from fontTools.pens.recordingPen import RecordingPen, DecomposingRecordingPen
+from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.pens.reverseContourPen import ReverseContourPen
 from fontTools.pens.boundsPen import BoundsPen
 from version import NAME_VERSION, FONT_REVISION, NAME_META
 
 SRC, FAMILY, PSFAM, OUTDIR = sys.argv[1:5]
 os.makedirs(OUTDIR, exist_ok=True)
+ELEMENTS = {'_dot', '_anchor'}
 STYLES = [(8, 'Text'), (32, 'Small Display'), (72, 'Display'), (144, 'Poster')]
 
 def contours(rec):
@@ -37,9 +40,17 @@ def contours(rec):
 for opsz, style in STYLES:
     vf = TTFont(SRC)
     inst = instantiateVariableFont(vf, {'opsz': opsz})
+    glyf, gs0 = inst['glyf'], inst.getGlyphSet()
+    flat = {}
+    for g in inst.getGlyphOrder():                # composites → simple glyphs, so overlaps can merge
+        if glyf[g].isComposite():
+            rec = DecomposingRecordingPen(gs0); gs0[g].draw(rec)
+            tt = TTGlyphPen(None); rec.replay(tt); flat[g] = tt.glyph()
+    for g, gl in flat.items():
+        glyf[g] = gl
     removeOverlaps(inst)                      # Text's overlapping dots merge into clean outlines
     gs = inst.getGlyphSet()
-    order = inst.getGlyphOrder()
+    order = [g for g in inst.getGlyphOrder() if g not in ELEMENTS]
     upm = inst['head'].unitsPerEm
     charstrings, metrics = {}, {}
     for g in order:

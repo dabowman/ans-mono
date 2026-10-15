@@ -2,6 +2,12 @@
 
 All notable changes to Ans Mono. Versions follow [Semantic Versioning](https://semver.org); the font files carry the same version in their name table (`Version 1.400` = 1.4.0, `Version 1.501` = 1.5.1).
 
+## [Unreleased]
+
+### Changed
+- The core variable font is built from components, like Bitcount: one `_dot` glyph carries the optical-size masters, and every character is a composite of `_dot` at its lit cells. Outlines are unchanged at every optical size, and unhinted rendering is pixel-identical. Hinted FreeType rendering can differ by sub-pixel edge rounding. Core web font 6.2 → 4.1 KB, `AnsMono-VF.ttf` 96 → 37 KB, embedded stylesheet 10.3 → 7.4 KB. The scroll fonts and static fonts are unchanged.
+- The build checks the core font's structure (`source/verify_core.py`).
+
 ## [1.5.2] - 2026-10-14
 
 ### Fixed

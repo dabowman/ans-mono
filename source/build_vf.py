@@ -14,16 +14,23 @@ SCRL  Scroll -8–8, in whole dot rows. The 8-row cell is a fixed window; the bi
       grid never moves. -8..0 rises in from below, 8..0 drops in from above. A stepped avar map
       holds every whole row flat, so a linear animation steps row by row with no half-lit dots.
 
+Components: like Bitcount, the core file is built from one element. `_dot` is a single LCD dot,
+centred on the origin, and it alone carries the opsz masters. Every character is a composite that
+places `_dot` at its lit cells, so changing the dot (its gap, and later its shape) changes every
+glyph, and gvar holds deltas for one glyph instead of every dot of every glyph. The scroll file
+can't use components: TrueType can move a component between masters but not switch it off, and
+SCRL works by switching dots off. It draws each dot as its own contour from the same element().
+
 Geometry is all integers (UPM 1024, 128 units per dot, even half-dot), so every master's points
 are exact and an off dot interpolates to exactly zero area at every opsz.
-Every glyph also carries a one-point contour at x = XMIN, so xMin is the same in every master and
+Every glyph also carries a one-point contour (in the core file, the zero-area `_anchor` component) at x = XMIN, so xMin is the same in every master and
 the hmtx side bearing always matches the outline. Without it, glyphs whose first column is empty
 (I, l, 1, …) were drawn a dot to the left.
 """
 import sys, os, importlib, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fontTools.fontBuilder import FontBuilder
-from fontTools.ttLib.tables._g_l_y_f import Glyph, GlyphCoordinates
+from fontTools.ttLib.tables._g_l_y_f import Glyph, GlyphCoordinates, GlyphComponent
 from fontTools.ttLib.tables.ttProgram import Program
 from fontTools.designspaceLib import DesignSpaceDocument, AxisDescriptor, SourceDescriptor, InstanceDescriptor
 from fontTools import varLib
@@ -63,20 +70,17 @@ def stepped_map():
 
 NOTDEF = ['#####', '#...#', '#...#', '#...#', '#...#', '#...#', '#####', '.....']
 
-def draw(rows, inset, shift):
-    """shift = SCRL value: display row r shows source row r + shift."""
-    w = max(len(r) for r in rows)
-    rows = [r.ljust(w, '.') for r in rows] + ['.' * w] * (ROWS - len(rows))
-    cols = [c for c in range(w) if any(row[c] == '#' for row in rows)]
-    coords, ends = [(XMIN, 0)], [0]                    # left anchor: xMin is XMIN in every master
-    for c in cols:
-        for r in range(ROWS) if SCROLL_AXIS else [r for r in range(ROWS) if rows[r][c] == '#']:
-            src = r + shift
-            on = 0 <= src < ROWS and rows[src][c] == '#'
-            cx, cy = c * P + H, (6 - r) * P + H
-            h = (H - inset) if on else 0
-            coords += [(cx - h, cy + h), (cx + h, cy + h), (cx + h, cy - h), (cx - h, cy - h)]
-            ends.append(len(coords) - 1)
+DOT, ANCHOR = '_dot', '_anchor'     # the element, and the xMin anchor (core file)
+
+def element(cx, cy, h):
+    """One dot: a square of half-side h centred on (cx, cy). The only place a dot's shape is defined."""
+    return [(cx - h, cy + h), (cx + h, cy + h), (cx + h, cy - h), (cx - h, cy - h)]
+
+def simple(contours):
+    coords, ends = [], []
+    for c in contours:
+        coords += c
+        ends.append(len(coords) - 1)
     gl = Glyph()
     gl.numberOfContours = len(ends)
     gl.coordinates = GlyphCoordinates(coords)
@@ -86,28 +90,73 @@ def draw(rows, inset, shift):
     gl.program = Program(); gl.program.fromBytecode(b'')
     return gl
 
+def grid(rows):
+    w = max(len(r) for r in rows)
+    return [r.ljust(w, '.') for r in rows] + ['.' * w] * (ROWS - len(rows)), w
+
+def centre(c, r):
+    return c * P + H, (6 - r) * P + H
+
+def draw(rows, inset, shift):
+    """Scroll file: every dot its own contour. shift = SCRL value: display row r shows source row r + shift."""
+    rows, w = grid(rows)
+    cols = [c for c in range(w) if any(row[c] == '#' for row in rows)]
+    contours = [[(XMIN, 0)]]                            # left anchor: xMin is XMIN in every master
+    for c in cols:
+        for r in range(ROWS):
+            src = r + shift
+            on = 0 <= src < ROWS and rows[src][c] == '#'
+            contours.append(element(*centre(c, r), (H - inset) if on else 0))
+    return simple(contours)
+
+def component(name, x, y):
+    gc = GlyphComponent()
+    gc.glyphName, gc.x, gc.y, gc.flags = name, x, y, 0     # no ROUND_XY_TO_GRID: dots land where contours did
+    return gc
+
+def compose(rows):
+    """Core file: the anchor plus one `_dot` per lit cell. Same in every master; only `_dot` varies."""
+    rows, w = grid(rows)
+    comps = [component(ANCHOR, XMIN, 0)]
+    comps += [component(DOT, *centre(c, r)) for r in range(ROWS) for c in range(w) if rows[r][c] == '#']
+    comps[0].flags |= 0x400                             # OVERLAP_COMPOUND: solid sizes overlap dots
+    gl = Glyph()
+    gl.numberOfContours = -1
+    gl.components = comps
+    return gl
+
+def make(rows, inset, shift):
+    return draw(rows, inset, shift) if SCROLL_AXIS else compose(rows)
+
 def build_master(inset, shift, path):
     order = ['.notdef'] + [gname(c) for c in G]
-    glyphs = {'.notdef': draw(NOTDEF, inset, shift)}
+    glyphs = {'.notdef': make(NOTDEF, inset, shift)}
     cmap = {}
     for ch, rows in G.items():
-        glyphs[gname(ch)] = draw(rows, inset, shift)
+        glyphs[gname(ch)] = make(rows, inset, shift)
         cmap[ord(ch)] = gname(ch)
     adv = {'.notdef': CELL}
     adv.update({gname(ch): width(ch, W) for ch in G})
     for ch, rows in SC.items():
         order.append(gname(ch) + '.sc')
-        glyphs[gname(ch) + '.sc'] = draw(rows, inset, shift)
+        glyphs[gname(ch) + '.sc'] = make(rows, inset, shift)
         adv[gname(ch) + '.sc'] = CELL
     for name, (rows, w) in extra_glyphs(G, W).items():     # ss01 unlit cells
         order.append(name)
-        glyphs[name] = draw(rows, inset, shift)
+        glyphs[name] = make(rows, inset, shift)
         adv[name] = w
+    if not SCROLL_AXIS:
+        order += [DOT, ANCHOR]
+        glyphs[DOT] = simple([element(0, 0, H - inset)])
+        # A zero-area stroke: a one-point glyph counts as empty in composite bounds, so xMin would
+        # fall on the first lit dot instead of XMIN. Horizontal, so no inked glyph's bounds change.
+        glyphs[ANCHOR] = simple([[(0, 0), (1, 0)]])
+        adv[DOT] = adv[ANCHOR] = 0
     fb = FontBuilder(UPM, isTTF=True)
     fb.setupGlyphOrder(order)
     fb.setupCharacterMap(cmap)
     fb.setupGlyf(glyphs)
-    fb.setupHorizontalMetrics({n: (adv[n] * P, XMIN) for n in order})
+    fb.setupHorizontalMetrics({n: (adv[n] * P, {DOT: -(H - inset), ANCHOR: 0}.get(n, XMIN)) for n in order})
     fb.setupHorizontalHeader(ascent=7 * P, descent=-P)
     fam = NAME + (' Scroll' if SCROLL_AXIS else '')
     fb.setupNameTable({

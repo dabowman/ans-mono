@@ -9,11 +9,11 @@ A 5×7 pixel monospace after the TI-84 Plus home screen. 192 characters plus 26 
 ```
 css/
   ans-mono.css                     @font-face by URL + helper classes           2.0 KB
-  ans-mono.embedded.css            same, font embedded as a data: URI          10.3 KB
+  ans-mono.embedded.css            same, font embedded as a data: URI           7.4 KB
   ans-mono-scroll.css              numerals with the scroll axis, by URL        1.5 KB  (opt-in)
   ans-mono-scroll.embedded.css     same, embedded                              33.1 KB  (opt-in)
 fonts/
-  web/       AnsMono-VF.woff2                    core: opsz axis               6.2 KB
+  web/       AnsMono-VF.woff2                    core: opsz axis               4.1 KB
              AnsMono-Regular.woff2               static, solid                  4.7 KB
              AnsMono-Numerals-Scroll-VF.woff2    numerals: opsz + SCRL         23.7 KB
              AnsMono-Scroll-VF.woff2             everything: opsz + SCRL       96.6 KB
@@ -27,7 +27,7 @@ source/      glyph bitmaps and build scripts
 Pick one stylesheet:
 
 ```html
-<!-- Bundled asset: browser fetches fonts/web/AnsMono-VF.woff2 (4.4 KB) -->
+<!-- Bundled asset: browser fetches fonts/web/AnsMono-VF.woff2 (4.1 KB) -->
 <link rel="stylesheet" href="ans-mono/css/ans-mono.css">
 
 <!-- No font request at all: the font is inside the CSS -->
@@ -170,6 +170,8 @@ Small caps: turn on *Small Capitals* / *All Small Caps* in the app's OpenType pa
 
 Everything in `fonts/` and `css/` is generated from `source/glyphs.py`, where each glyph is a 5×7 grid of `#` and `.`.
 
+The core variable font is built from components, like [Bitcount](https://fonts.google.com/specimen/Bitcount). One glyph, `_dot`, is a single LCD dot, and it alone holds the optical-size masters. Every character is a composite that places `_dot` at its lit cells. To change how a dot looks at any size, change `element()` and `OPSZ_MASTERS` in `source/build_vf.py`, and every glyph follows. The scroll fonts draw each dot as its own contour from the same `element()`, because a TrueType component can move between masters but can't be switched off.
+
 ```sh
 pip install -r requirements.txt
 ./build.sh                 # fonts + css; also runs the scroll-axis check
@@ -183,7 +185,8 @@ The build is reproducible: unchanged sources rebuild byte-for-byte, so diffs in 
 | `source/glyphs.py` | glyph bitmaps (`G`), small caps (`SC`), space widths (`W`) |
 | `source/features.py` | advance widths, unlit-cell glyphs and the OpenType features (smcp, c2sc, ss01) |
 | `source/build.py` | static font with merged outlines |
-| `source/build_vf.py` | variable font; `--scroll` adds the SCRL axis |
+| `source/build_vf.py` | variable font, built from one `_dot` component; `--scroll` adds the SCRL axis |
+| `source/verify_core.py` | checks the core font at 9 sizes: every glyph is one `_dot` per lit cell, and xMin matches the side bearing; fails the build otherwise |
 | `source/verify.py` | checks every dot of every glyph across 9 sizes × 13 scroll values (no specks, no partial dots); fails the build otherwise |
 | `source/build_otf.py` | static CFF `.otf` per named optical size |
 | `source/make_css.py` | the four stylesheets |
