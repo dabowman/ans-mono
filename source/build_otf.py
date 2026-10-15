@@ -2,7 +2,8 @@
 
 usage: python3 build_otf.py <core-VF.ttf> "<Family>" <PSFamily> <out-dir>
 
-One .otf per named optical size: Text (solid), Small Display, Display, Poster (dot grid open).
+One .otf per named optical size: Text (solid), Small Display, Display, Poster (dot grid open),
+with square dots at normal expansion (ELSH 0, ELXP 0); the other shapes are in the variable font.
 Each style is its own legacy family ("Ans Mono Display") so it shows up in every app, and carries
 the typographic family/subfamily names (IDs 16/17) so apps that support it group them under one
 family ("Ans Mono" → Text / Small Display / Display / Poster). OpenType features (small caps)
@@ -33,13 +34,23 @@ def contours(rec):
         cur.append((op, args))
         if op in ('closePath', 'endPath'):
             if sum(1 for o, _ in cur if o in ('lineTo', 'curveTo', 'qCurveTo')) >= 2:
-                out.append(cur)
+                out.append(top_left_first(cur))
             cur = []
     return out
 
+def top_left_first(c):
+    """Start a straight-sided contour at its top-left corner. Where a contour starts depends on the
+    order removeOverlaps sees the dots in; starting each one at the same corner keeps CFF small."""
+    if c[0][0] != 'moveTo' or any(op not in ('lineTo', 'closePath') for op, _ in c[1:]):
+        return c
+    pts = [args[0] for op, args in c if op in ('moveTo', 'lineTo')]
+    i = min(range(len(pts)), key=lambda k: (pts[k][0], -pts[k][1]))
+    pts = pts[i:] + pts[:i]
+    return [('moveTo', (pts[0],))] + [('lineTo', (p,)) for p in pts[1:]] + [c[-1]]
+
 for opsz, style in STYLES:
     vf = TTFont(SRC)
-    inst = instantiateVariableFont(vf, {'opsz': opsz})
+    inst = instantiateVariableFont(vf, {'opsz': opsz, 'ELSH': 0, 'ELXP': 0})
     glyf, gs0 = inst['glyf'], inst.getGlyphSet()
     flat = {}
     for g in inst.getGlyphOrder():                # composites → simple glyphs, so overlaps can merge

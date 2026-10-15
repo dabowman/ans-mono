@@ -2,11 +2,19 @@
 
 All notable changes to Ans Mono. Versions follow [Semantic Versioning](https://semver.org); the font files carry the same version in their name table (`Version 1.400` = 1.4.0, `Version 1.501` = 1.5.1).
 
-## [Unreleased]
+## [1.6.0] - 2026-10-15
+
+### Added
+- **Dot shape** axis (`ELSH`, 0–100): square (0), round (50), diamond (100), and blends in between.
+- **Dot size** axis (`ELXP`, −100 to 100): from fine pinpoints at half the dot pitch (−100), through the optical-size gap (0), to dots grown to fill the cell (100).
+- **Ans Mono LCD** (`AnsMono-LCD-VF`, `css/ans-mono-lcd.css`): the core font with COLR colour layers, like Bitcount Ink. Every character draws its unlit cell under its lit dots, so one run of text is a whole LCD readout. Two palettes, light (black at 12%) and dark (white at 14%), selected with CSS `font-palette`. Where colour fonts aren't supported, it draws the lit dots only.
+- Named styles Round and Diamond for each optical size in the variable fonts (Text Round, Display Diamond, …).
+- CSS helpers `.ans-mono-round`, `.ans-mono-diamond`, `.ans-mono-lcd`, `.ans-mono-lcd-dark`.
 
 ### Changed
-- The core variable font is built from components, like Bitcount: one `_dot` glyph carries the optical-size masters, and every character is a composite of `_dot` at its lit cells. Outlines are unchanged at every optical size, and unhinted rendering is pixel-identical. Hinted FreeType rendering can differ by sub-pixel edge rounding. Core web font 6.2 → 4.1 KB, `AnsMono-VF.ttf` 96 → 37 KB, embedded stylesheet 10.3 → 7.4 KB. The scroll fonts and static fonts are unchanged.
-- The build checks the core font's structure (`source/verify_core.py`).
+- The core variable font is built from components, like Bitcount: one `_dot` glyph carries every master, and every character is a composite of `_dot` at its lit cells. At the default shape and size, outlines are unchanged at every optical size, and unhinted rendering is pixel-identical to 1.5.2. Hinted FreeType rendering can differ by sub-pixel edge rounding. With all three axes, the core web font is smaller than 1.5.2's single-axis font: 6.2 → 5.0 KB.
+- The `.ans-mono-readout` unlit copy inherits the element's `font-variation-settings`, so it matches the lit dots' shape and size.
+- The build checks the core and LCD fonts' structure and colour layers (`source/verify_core.py`).
 
 ## [1.5.2] - 2026-10-14
 

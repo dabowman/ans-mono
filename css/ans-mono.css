@@ -1,10 +1,12 @@
-/* Ans Mono: core web font, variable on opsz (optical size). 4084 bytes woff2.
+/* Ans Mono: core web font. 5048 bytes woff2.
+   Axes: opsz (optical size), ELSH (dot shape: 0 square, 50 round, 100 diamond), ELXP (dot size: -100 fine, 0 normal, 100 solid).
    Dot gaps open automatically from ~32px (font-optical-sizing: auto); font-optical-sizing: none keeps it solid.
+   Dot shape and size: font-variation-settings: "ELSH" 50, "ELXP" -40 (or .ans-mono-round / .ans-mono-diamond).
    Small caps: font-variant-caps: small-caps | all-small-caps.
    Unlit cells: font-feature-settings: "ss01" (or .ans-mono-unlit / .ans-mono-readout below). */
 @font-face {
   font-family: "Ans Mono";
-  src: url("../fonts/web/AnsMono-VF.woff2?v=1.5.2") format("woff2");
+  src: url("../fonts/web/AnsMono-VF.woff2?v=1.6.0") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
@@ -18,6 +20,14 @@
 
 .ans-mono-sc {
   font-variant-caps: all-small-caps;
+}
+
+/* Dot shape (ELSH). Any value from 0 to 100 works; these are the named ones. */
+.ans-mono-round {
+  font-variation-settings: "ELSH" 50;
+}
+.ans-mono-diamond {
+  font-variation-settings: "ELSH" 100;
 }
 
 /* Unlit cells (OpenType ss01): every character, spaces included, becomes a block of dots
@@ -42,7 +52,7 @@
   z-index: -1;
   font-family: "Ans Mono", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;    /* the core font carries ss01, even under .ans-mono-roll */
   font-feature-settings: "ss01";
-  font-variation-settings: normal;        /* the unlit grid never scrolls */
+  font-variation-settings: inherit;       /* same dot shape and size as the lit text; the core font has no SCRL, so the unlit grid never scrolls */
   color: var(--ans-mono-unlit, color-mix(in srgb, currentColor 12%, transparent));
   pointer-events: none;
   user-select: none;

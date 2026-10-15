@@ -1,0 +1,26 @@
+/* Ans Mono LCD: the core font with colour layers. 6032 bytes woff2.
+   Every character is its lit dots (the text colour) over its unlit cell, so one run of text is a
+   whole LCD readout, spaces included. Same axes as the core font: opsz, ELSH (dot shape), ELXP (dot size).
+   Browsers without colour-font support draw the lit dots only.
+   Unlit colour: font-palette: light (black at 12%, the default) or dark (white at 14%, .ans-mono-lcd-dark),
+   or your own:
+     @font-palette-values --my-lcd { font-family: "Ans Mono LCD"; override-colors: 0 #B1BB9F; }
+     .my-readout { font-palette: --my-lcd; }
+   Spaces carry unlit cells too: use white-space: pre (or pre-wrap) so runs of spaces aren't collapsed. */
+@font-face {
+  font-family: "Ans Mono LCD";
+  src: url("../fonts/web/AnsMono-LCD-VF.woff2?v=1.6.0") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.ans-mono-lcd {
+  font-family: "Ans Mono LCD", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-palette: light;
+}
+
+.ans-mono-lcd-dark {
+  font-palette: dark;
+}

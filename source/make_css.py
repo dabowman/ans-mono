@@ -2,6 +2,8 @@
 
 css/ans-mono.css                   @font-face by URL (../fonts/web/), for apps that bundle assets
 css/ans-mono.embedded.css          same font embedded as a data: URI, so the page needs no font request
+css/ans-mono-lcd.css               the LCD colour font (lit dots over unlit cells), by URL (opt-in)
+css/ans-mono-lcd.embedded.css      the same, embedded
 css/ans-mono-scroll.css            numerals subset with the SCRL axis, by URL (opt-in)
 css/ans-mono-scroll.embedded.css   the same, embedded
 """
@@ -23,8 +25,10 @@ def src(name, embed):
     return f'url("../fonts/web/{name}?v={VERSION}") format("woff2")'
 
 def core(embed):
-    return f'''/* Ans Mono: core web font, variable on opsz (optical size). {size("AnsMono-VF.woff2")} bytes woff2{", embedded" if embed else ""}.
+    return f'''/* Ans Mono: core web font. {size("AnsMono-VF.woff2")} bytes woff2{", embedded" if embed else ""}.
+   Axes: opsz (optical size), ELSH (dot shape: 0 square, 50 round, 100 diamond), ELXP (dot size: -100 fine, 0 normal, 100 solid).
    Dot gaps open automatically from ~32px (font-optical-sizing: auto); font-optical-sizing: none keeps it solid.
+   Dot shape and size: font-variation-settings: "ELSH" 50, "ELXP" -40 (or .ans-mono-round / .ans-mono-diamond).
    Small caps: font-variant-caps: small-caps | all-small-caps.
    Unlit cells: font-feature-settings: "ss01" (or .ans-mono-unlit / .ans-mono-readout below). */
 @font-face {{
@@ -43,6 +47,14 @@ def core(embed):
 
 .ans-mono-sc {{
   font-variant-caps: all-small-caps;
+}}
+
+/* Dot shape (ELSH). Any value from 0 to 100 works; these are the named ones. */
+.ans-mono-round {{
+  font-variation-settings: "ELSH" 50;
+}}
+.ans-mono-diamond {{
+  font-variation-settings: "ELSH" 100;
 }}
 
 /* Unlit cells (OpenType ss01): every character, spaces included, becomes a block of dots
@@ -67,10 +79,39 @@ def core(embed):
   z-index: -1;
   font-family: "Ans Mono", {FALLBACK};    /* the core font carries ss01, even under .ans-mono-roll */
   font-feature-settings: "ss01";
-  font-variation-settings: normal;        /* the unlit grid never scrolls */
+  font-variation-settings: inherit;       /* same dot shape and size as the lit text; the core font has no SCRL, so the unlit grid never scrolls */
   color: var(--ans-mono-unlit, color-mix(in srgb, currentColor 12%, transparent));
   pointer-events: none;
   user-select: none;
+}}
+'''
+
+def lcd(embed):
+    return f'''/* Ans Mono LCD: the core font with colour layers. {size("AnsMono-LCD-VF.woff2")} bytes woff2{", embedded" if embed else ""}.
+   Every character is its lit dots (the text colour) over its unlit cell, so one run of text is a
+   whole LCD readout, spaces included. Same axes as the core font: opsz, ELSH (dot shape), ELXP (dot size).
+   Browsers without colour-font support draw the lit dots only.
+   Unlit colour: font-palette: light (black at 12%, the default) or dark (white at 14%, .ans-mono-lcd-dark),
+   or your own:
+     @font-palette-values --my-lcd {{ font-family: "Ans Mono LCD"; override-colors: 0 #B1BB9F; }}
+     .my-readout {{ font-palette: --my-lcd; }}
+   Spaces carry unlit cells too: use white-space: pre (or pre-wrap) so runs of spaces aren't collapsed. */
+@font-face {{
+  font-family: "Ans Mono LCD";
+  src: {src("AnsMono-LCD-VF.woff2", embed)};
+  font-weight: 400;
+  font-style: normal;
+  font-display: {"block" if embed else "swap"};
+}}
+
+.ans-mono-lcd {{
+  font-family: "Ans Mono LCD", {FALLBACK};
+  font-variant-numeric: tabular-nums;
+  font-palette: light;
+}}
+
+.ans-mono-lcd-dark {{
+  font-palette: dark;
 }}
 '''
 
@@ -107,6 +148,7 @@ def scroll(embed):
 
 os.makedirs('css', exist_ok=True)
 for name, text in [('ans-mono.css', core(False)), ('ans-mono.embedded.css', core(True)),
+                   ('ans-mono-lcd.css', lcd(False)), ('ans-mono-lcd.embedded.css', lcd(True)),
                    ('ans-mono-scroll.css', scroll(False)), ('ans-mono-scroll.embedded.css', scroll(True))]:
     open(f'css/{name}', 'w').write(text)
     print(f'css/{name}', os.path.getsize(f'css/{name}'), 'bytes')

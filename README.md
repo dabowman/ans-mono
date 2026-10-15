@@ -1,6 +1,8 @@
 # Ans Mono
 
-A 5×7 pixel monospace after the TI-84 Plus home screen. 192 characters plus 26 small caps, an **unlit-cell** layer for LCD-style readouts, a variable **optical size** axis that opens the LCD dot grid as type gets bigger, and an optional **scroll** axis that rolls characters in row by row.
+A 5×7 pixel monospace after the TI-84 Plus home screen. 192 characters plus 26 small caps, an **unlit-cell** layer for LCD-style readouts, a variable **optical size** axis that opens the LCD dot grid as type gets bigger, **dot shape** and **dot size** axes, an **LCD colour font** that draws lit and unlit dots in one run of text, and an optional **scroll** axis that rolls characters in row by row.
+
+Like [Bitcount](https://fonts.google.com/specimen/Bitcount), every character is built from one element: a single dot, placed at each lit cell. The dot's gap, shape and size are axes on that one glyph.
 
 ![Ans Mono specimen](docs/specimen.png)
 
@@ -8,16 +10,19 @@ A 5×7 pixel monospace after the TI-84 Plus home screen. 192 characters plus 26 
 
 ```
 css/
-  ans-mono.css                     @font-face by URL + helper classes           2.0 KB
-  ans-mono.embedded.css            same, font embedded as a data: URI           7.4 KB
+  ans-mono.css                     @font-face by URL + helper classes           2.5 KB
+  ans-mono.embedded.css            same, font embedded as a data: URI           9.2 KB
+  ans-mono-lcd.css                 LCD colour font, by URL                      1.1 KB  (opt-in)
+  ans-mono-lcd.embedded.css        same, embedded                               9.2 KB  (opt-in)
   ans-mono-scroll.css              numerals with the scroll axis, by URL        1.5 KB  (opt-in)
-  ans-mono-scroll.embedded.css     same, embedded                              33.1 KB  (opt-in)
+  ans-mono-scroll.embedded.css     same, embedded                              33.0 KB  (opt-in)
 fonts/
-  web/       AnsMono-VF.woff2                    core: opsz axis               4.1 KB
+  web/       AnsMono-VF.woff2                    core: opsz + ELSH + ELXP       5.0 KB
+             AnsMono-LCD-VF.woff2                core + colour layers           6.0 KB
              AnsMono-Regular.woff2               static, solid                  4.7 KB
-             AnsMono-Numerals-Scroll-VF.woff2    numerals: opsz + SCRL         23.7 KB
-             AnsMono-Scroll-VF.woff2             everything: opsz + SCRL       96.6 KB
-  variable/  AnsMono-VF.ttf, AnsMono-Scroll-VF.ttf          desktop variable fonts
+             AnsMono-Numerals-Scroll-VF.woff2    numerals: opsz + SCRL         23.6 KB
+             AnsMono-Scroll-VF.woff2             everything: opsz + SCRL       96.7 KB
+  variable/  AnsMono-VF.ttf, AnsMono-LCD-VF.ttf, AnsMono-Scroll-VF.ttf   desktop variable fonts
   otf/       AnsMono-Text / SmallDisplay / Display / Poster .otf   desktop static (CFF)
 source/      glyph bitmaps and build scripts
 ```
@@ -27,7 +32,7 @@ source/      glyph bitmaps and build scripts
 Pick one stylesheet:
 
 ```html
-<!-- Bundled asset: browser fetches fonts/web/AnsMono-VF.woff2 (4.1 KB) -->
+<!-- Bundled asset: browser fetches fonts/web/AnsMono-VF.woff2 (5.0 KB) -->
 <link rel="stylesheet" href="ans-mono/css/ans-mono.css">
 
 <!-- No font request at all: the font is inside the CSS -->
@@ -69,6 +74,26 @@ Keep it solid at any size with `font-optical-sizing: none`, or force a look with
 
 **Crisp sizes:** the em is 8 dots tall, so multiples of 8 px (8, 16, 24, 32 …) put every dot on whole pixels.
 
+### Dot shape (`ELSH`, 0–100) and dot size (`ELXP`, −100 to 100)
+
+Both axes change the one dot every character is built from, so they work at every optical size and on every character, including small caps, cell graphics and unlit cells.
+
+| `ELSH` | Dots | | `ELXP` | Dots |
+|---|---|---|---|---|
+| 0 (default) | square | | −100 | half the dot pitch: fine pinpoints |
+| 50 | round | | 0 (default) | the gap optical size sets |
+| 100 | diamond | | 100 | grown to fill the cell: solid, or touching circles |
+
+In-between values blend: 25 is a rounded square, 75 a pinched circle.
+
+```css
+.dial  { font-variation-settings: "ELSH" 50; }               /* round dots */
+.badge { font-variation-settings: "ELSH" 100, "ELXP" 60; }   /* bigger diamonds */
+/* or the helper classes: class="ans-mono ans-mono-round" / "ans-mono ans-mono-diamond" */
+```
+
+`font-variation-settings` replaces the whole list, so set every axis you want in one declaration. Optical size stays automatic unless you list `opsz`. Round and diamond dots look best from about 24px, where the dot grid opens. At text sizes, square dots read best. The scroll fonts keep square dots and have no ELSH or ELXP axis.
+
 ### Small caps
 
 ```css
@@ -92,7 +117,24 @@ One element does both layers (`.ans-mono-readout` draws the unlit copy from `dat
 .ans-mono-readout { --ans-mono-unlit: #B1BB9F; }   /* default: currentColor at 12% */
 ```
 
-Or build the two layers yourself, with `font-feature-settings: "ss01"` (or `.ans-mono-unlit`) on the back copy. For a rolling readout, add `ans-mono-roll` next to `ans-mono-readout`: the digits roll while the unlit grid stays still.
+Or build the two layers yourself, with `font-feature-settings: "ss01"` (or `.ans-mono-unlit`) on the back copy. For a rolling readout, add `ans-mono-roll` next to `ans-mono-readout`: the digits roll while the unlit grid stays still. The unlit copy inherits the element's dot shape and size.
+
+### LCD colour font: lit and unlit in one run of text (opt-in)
+
+Ans Mono LCD is the core font with colour layers, like Bitcount Ink. Each character is two layers: its unlit cell, then its lit dots on top in the text colour. One element, with no copy of the text, makes a whole readout:
+
+```html
+<link rel="stylesheet" href="ans-mono/css/ans-mono-lcd.css">
+<span class="ans-mono-lcd" style="white-space: pre">12 480</span>
+```
+
+| Unlit colour | How |
+|---|---|
+| black at 12%, for light backgrounds | default (`font-palette: light`) |
+| white at 14%, for dark backgrounds | `font-palette: dark`, or class `ans-mono-lcd-dark` |
+| your own | `@font-palette-values --lcd { font-family: "Ans Mono LCD"; override-colors: 0 #B1BB9F; }` then `font-palette: --lcd` |
+
+It has the same axes as the core font, so `font-variation-settings: "ELSH" 50` gives round lit and unlit dots. It uses COLR version 0, the colour-font format with the widest support (Chrome, Edge, Firefox, Safari). Where colour fonts aren't supported, it draws the lit dots only. Spaces carry unlit cells too, so use `white-space: pre` to keep runs of spaces. It doesn't scroll: for rolling digits, use `.ans-mono-readout` with `.ans-mono-roll`.
 
 ### Spaces
 
@@ -162,7 +204,7 @@ Values snap to whole rows, so a plain linear animation steps one dot row at a ti
 Install **either** the static OTFs **or** the variable TTF, not both. They share family names, so having both installed can confuse font menus.
 
 - **`fonts/otf/`** works in every app. Four styles, one per optical size: Text (solid), Small Display, Display, Poster. Apps that support typographic families group them under *Ans Mono*; others list *Ans Mono Text*, *Ans Mono Display* and so on.
-- **`fonts/variable/AnsMono-VF.ttf`** is for apps with variable-font support (Figma, Adobe, Affinity, Sketch). It has an Optical size slider and the same four named styles. `AnsMono-Scroll-VF.ttf` adds the Scroll axis for motion work.
+- **`fonts/variable/AnsMono-VF.ttf`** is for apps with variable-font support (Figma, Adobe, Affinity, Sketch). It has Optical size, Element shape and Element expansion sliders, and twelve named styles: Text, Small Display, Display and Poster, each also in Round and Diamond. `AnsMono-LCD-VF.ttf` adds the unlit colour layer, for apps that support colour fonts. `AnsMono-Scroll-VF.ttf` adds the Scroll axis for motion work.
 
 Small caps: turn on *Small Capitals* / *All Small Caps* in the app's OpenType panel. Unlit cells: *Stylistic Set 1*.
 
@@ -170,7 +212,7 @@ Small caps: turn on *Small Capitals* / *All Small Caps* in the app's OpenType pa
 
 Everything in `fonts/` and `css/` is generated from `source/glyphs.py`, where each glyph is a 5×7 grid of `#` and `.`.
 
-The core variable font is built from components, like [Bitcount](https://fonts.google.com/specimen/Bitcount). One glyph, `_dot`, is a single LCD dot, and it alone holds the optical-size masters. Every character is a composite that places `_dot` at its lit cells. To change how a dot looks at any size, change `element()` and `OPSZ_MASTERS` in `source/build_vf.py`, and every glyph follows. The scroll fonts draw each dot as its own contour from the same `element()`, because a TrueType component can move between masters but can't be switched off.
+The core and LCD variable fonts are built from components, like [Bitcount](https://fonts.google.com/specimen/Bitcount). One glyph, `_dot`, is a single LCD dot, and it alone holds the masters: 5 optical sizes × 3 shapes × 3 expansions. Every character is a composite that places `_dot` at its lit cells, so the three axes cost about 1 KB of woff2 between them. The dot is defined in `source/build_vf.py`: `QUARTER` holds its shapes (16 points each, so they interpolate), `OPSZ_MASTERS` its gaps and `dot_half()` its sizes. Change them and every glyph follows. The LCD font adds a COLR layer per character: the ss01 unlit fill of its width under the character itself. The scroll fonts draw each dot as its own square contour, because a TrueType component can move between masters but can't be switched off.
 
 ```sh
 pip install -r requirements.txt
@@ -185,11 +227,11 @@ The build is reproducible: unchanged sources rebuild byte-for-byte, so diffs in 
 | `source/glyphs.py` | glyph bitmaps (`G`), small caps (`SC`), space widths (`W`) |
 | `source/features.py` | advance widths, unlit-cell glyphs and the OpenType features (smcp, c2sc, ss01) |
 | `source/build.py` | static font with merged outlines |
-| `source/build_vf.py` | variable font, built from one `_dot` component; `--scroll` adds the SCRL axis |
-| `source/verify_core.py` | checks the core font at 9 sizes: every glyph is one `_dot` per lit cell, and xMin matches the side bearing; fails the build otherwise |
+| `source/build_vf.py` | variable font, built from one `_dot` component; `--lcd` adds colour layers, `--scroll` the SCRL axis |
+| `source/verify_core.py` | checks the core and LCD fonts at 9 sizes × 5 shapes × 5 expansions: every glyph is one `_dot` per lit cell, xMin matches the side bearing, and (`--lcd`) every character has its colour layers; fails the build otherwise |
 | `source/verify.py` | checks every dot of every glyph across 9 sizes × 13 scroll values (no specks, no partial dots); fails the build otherwise |
 | `source/build_otf.py` | static CFF `.otf` per named optical size |
-| `source/make_css.py` | the four stylesheets |
+| `source/make_css.py` | the six stylesheets |
 
 ## Licence
 

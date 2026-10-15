@@ -13,10 +13,13 @@ mkdir -p "$B" fonts/web fonts/variable fonts/otf
 
 echo "→ static"
 python3 source/build.py "$B/AnsMono-Regular" glyphs "Ans Mono"
-echo "→ variable: opsz"
+echo "→ variable: opsz + ELSH + ELXP"
 python3 source/build_vf.py "$B/AnsMono-VF" glyphs "Ans Mono"
-echo "→ verifying core font (one _dot per lit cell, xMin = side bearing, 9 sizes)"
+echo "→ variable: opsz + ELSH + ELXP, colour layers (LCD)"
+python3 source/build_vf.py "$B/AnsMono-LCD-VF" glyphs "Ans Mono" --lcd
+echo "→ verifying core and LCD fonts (one _dot per lit cell, xMin = side bearing, colour layers)"
 python3 source/verify_core.py "$B/AnsMono-VF.ttf" glyphs
+python3 source/verify_core.py "$B/AnsMono-LCD-VF.ttf" glyphs --lcd
 echo "→ variable: opsz + SCRL"
 python3 source/build_vf.py "$B/AnsMono-Scroll-VF" glyphs "Ans Mono" --scroll
 echo "→ verifying scroll axis (every dot, 9 sizes × 13 scroll values)"
@@ -30,9 +33,9 @@ pyftsubset "$B/AnsMono-Scroll-VF.ttf" \
 echo "→ desktop OTF"
 python3 source/build_otf.py "$B/AnsMono-VF.ttf" "Ans Mono" AnsMono fonts/otf
 
-cp "$B/AnsMono-VF.woff2" "$B/AnsMono-Scroll-VF.woff2" "$B/AnsMono-Numerals-Scroll-VF.woff2" \
+cp "$B/AnsMono-VF.woff2" "$B/AnsMono-LCD-VF.woff2" "$B/AnsMono-Scroll-VF.woff2" "$B/AnsMono-Numerals-Scroll-VF.woff2" \
    "$B/AnsMono-Regular.woff2" fonts/web/
-cp "$B/AnsMono-VF.ttf" "$B/AnsMono-Scroll-VF.ttf" fonts/variable/
+cp "$B/AnsMono-VF.ttf" "$B/AnsMono-LCD-VF.ttf" "$B/AnsMono-Scroll-VF.ttf" fonts/variable/
 
 echo "→ css"
 python3 source/make_css.py
